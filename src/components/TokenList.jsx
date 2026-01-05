@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 
+// Platform abbreviations for display
+const PLATFORM_ABBREV = {
+  'ethereum': 'ETH',
+  'base': 'BASE',
+  'solana': 'SOL'
+};
+
 export default function TokenList({ tokens, onToggle, onRemove }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -50,42 +57,54 @@ export default function TokenList({ tokens, onToggle, onRemove }) {
         </div>
       </div>
       <div className="token-grid">
-        {tokens.map(token => (
-          <div
-            key={token.id}
-            className={`token-item ${token.enabled ? 'enabled' : 'disabled'}`}
-            onClick={() => onToggle(token.id)}
-          >
+        {tokens.map(token => {
+          const platformLabel = PLATFORM_ABBREV[token.platform] || token.platform?.toUpperCase();
+          const hasMergedVariants = token.isMerged && token.variants?.length > 1;
+
+          return (
             <div
-              className="token-color"
-              style={{ backgroundColor: token.color }}
-            />
-            <span className="token-symbol">{token.symbol}</span>
-            <div className="token-actions">
-              {token.contract && (
-                <button
-                  className="btn-copy"
-                  onClick={(e) => handleCopy(e, token)}
-                  title="Copy contract address"
-                >
-                  {copiedId === token.id ? '✓' : '⧉'}
-                </button>
+              key={token.id}
+              className={`token-item ${token.enabled ? 'enabled' : 'disabled'}`}
+              onClick={() => onToggle(token.id)}
+              title={hasMergedVariants
+                ? `Best data from ${token.platform} (${token.data?.length || 0} points)`
+                : undefined
+              }
+            >
+              <div
+                className="token-color"
+                style={{ backgroundColor: token.color }}
+              />
+              <span className="token-symbol">{token.symbol}</span>
+              {hasMergedVariants && (
+                <span className="token-platform-badge">{platformLabel}</span>
               )}
-              {token.isCustom && (
-                <button
-                  className="btn-remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove(token.id);
-                  }}
-                  title="Remove token"
-                >
-                  ×
-                </button>
-              )}
+              <div className="token-actions">
+                {token.contract && (
+                  <button
+                    className="btn-copy"
+                    onClick={(e) => handleCopy(e, token)}
+                    title="Copy contract address"
+                  >
+                    {copiedId === token.id ? '✓' : '⧉'}
+                  </button>
+                )}
+                {token.isCustom && (
+                  <button
+                    className="btn-remove"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(token.id);
+                    }}
+                    title="Remove token"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

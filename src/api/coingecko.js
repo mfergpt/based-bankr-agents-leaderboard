@@ -1,7 +1,8 @@
-// Main API service - uses GeckoTerminal as primary source
-// GeckoTerminal: 30 calls/min, 6 months historical OHLCV
-// DexPaprika: Free, no rate limits, up to 1 year historical OHLCV
-// Fallback: DexScreener for real-time data only
+// Main API service - token data fetching with fallback chain
+// 1. GeckoTerminal: 30 calls/min, 6 months historical OHLCV (primary)
+// 2. CoinGecko: 10-30 calls/min, historical market cap (secondary)
+// 3. DexScreener: No limits, current data only (last resort)
+// DexPaprika: DISABLED - CORS blocked from browser-based apps (GitHub Pages)
 
 import {
   fetchGeckoTerminalMarketCap,
@@ -10,12 +11,18 @@ import {
   daysToApiParam
 } from './geckoterminal';
 
-import {
-  fetchDexPaprikaMarketCap,
-  clearCache as clearDexPaprikaCache
-} from './dexpaprika';
+// DexPaprika disabled - CORS blocked from browser-based apps (GitHub Pages)
+// import {
+//   fetchDexPaprikaMarketCap,
+//   clearCache as clearDexPaprikaCache
+// } from './dexpaprika';
 
 import { fetchDexScreenerMarketCap } from './dexscreener';
+
+import {
+  fetchCoinGeckoBackupMarketCap,
+  clearCache as clearCoinGeckoBackupCache
+} from './coingecko-backup';
 
 // Re-export the GeckoTerminal functions as the main API
 export { daysToApiParam };
@@ -38,17 +45,19 @@ function setCache(key, data) {
 
 /**
  * Fetch market cap data for a token
- * Tries GeckoTerminal first, then DexPaprika, then DexScreener
+ * Fallback chain: GeckoTerminal -> CoinGecko -> DexScreener
  */
 export async function fetchTokenMarketCap(token, days = 30) {
   const cacheKey = `token_${token.id}_${days}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  // Try GeckoTerminal first (has historical data, up to 6 months)
+  let result = null;
+
+  // 1. Try GeckoTerminal first (has historical OHLCV, up to 6 months)
   try {
     console.log(`Fetching ${token.symbol} from GeckoTerminal...`);
-    const result = await fetchGeckoTerminalMarketCap(token, days);
+    result = await fetchGeckoTerminalMarketCap(token, days);
 
     if (result && result.data && result.data.length > 0) {
       console.log(`✓ ${token.symbol}: ${result.data.length} data points from GeckoTerminal`);
@@ -59,32 +68,32 @@ export async function fetchTokenMarketCap(token, days = 30) {
     console.warn(`GeckoTerminal failed for ${token.symbol}:`, error.message);
   }
 
-  // Try DexPaprika next (free, no rate limits, up to 1 year historical)
+  // 2. Try CoinGecko (has historical market cap data)
   try {
-    console.log(`Trying DexPaprika for ${token.symbol}...`);
-    const paprikaResult = await fetchDexPaprikaMarketCap(token, days);
+    console.log(`Trying CoinGecko for ${token.symbol}...`);
+    result = await fetchCoinGeckoBackupMarketCap(token, days);
 
-    if (paprikaResult && paprikaResult.data && paprikaResult.data.length > 0) {
-      console.log(`✓ ${token.symbol}: ${paprikaResult.data.length} data points from DexPaprika`);
-      setCache(cacheKey, paprikaResult);
-      return paprikaResult;
+    if (result && result.data && result.data.length > 0) {
+      console.log(`✓ ${token.symbol}: ${result.data.length} data points from CoinGecko`);
+      setCache(cacheKey, result);
+      return result;
     }
   } catch (error) {
-    console.warn(`DexPaprika failed for ${token.symbol}:`, error.message);
+    console.warn(`CoinGecko failed for ${token.symbol}:`, error.message);
   }
 
-  // Fallback to DexScreener (only current data, no history)
+  // 3. Last resort: DexScreener (only current data, no history)
   try {
     console.log(`Trying DexScreener for ${token.symbol}...`);
-    const dexResult = await fetchDexScreenerMarketCap(token);
+    result = await fetchDexScreenerMarketCap(token);
 
-    if (dexResult && dexResult.data && dexResult.data.length > 0) {
+    if (result && result.data && result.data.length > 0) {
       console.log(`✓ ${token.symbol}: current data from DexScreener`);
-      setCache(cacheKey, dexResult);
-      return dexResult;
+      setCache(cacheKey, result);
+      return result;
     }
   } catch (error) {
-    console.warn(`DexScreener also failed for ${token.symbol}:`, error.message);
+    console.warn(`DexScreener failed for ${token.symbol}:`, error.message);
   }
 
   console.warn(`✗ ${token.symbol}: No data from any source`);
@@ -131,7 +140,8 @@ export async function fetchAllTokensMarketCap(tokens, days = 30, onProgress) {
 export function clearCache() {
   resultCache.clear();
   clearGeckoTerminalCache();
-  clearDexPaprikaCache();
+  // clearDexPaprikaCache(); // Disabled
+  clearCoinGeckoBackupCache();
 }
 
 /**

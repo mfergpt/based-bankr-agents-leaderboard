@@ -136,7 +136,7 @@ export const WATCHED_TOKENS = {
       symbol: 'SMURFCAT',
       name: 'Smurfcat',
       color: '#1E90FF',
-      platform: 'base',
+      platform: 'ethereum',
       contract: '0xff836a5821e69066c87e268bc51b849fab94240c',
       enabled: false
     },
@@ -145,17 +145,17 @@ export const WATCHED_TOKENS = {
       symbol: 'SNIBBU',
       name: 'Snibbu',
       color: '#FF8C00',
-      platform: 'base',
+      platform: 'ethereum',
       contract: '0xaee9ba9ce49fe810417a36408e34d9962b653e78',
       enabled: false
     },
     {
       id: 'mumu',
       symbol: 'MUMU',
-      name: 'Mumu',
+      name: 'Mumu the Bull',
       color: '#8B0000',
-      platform: 'base',
-      contract: '0x2f573070e6090b3264fe707e2c9f201716f123c7',
+      platform: 'solana',
+      contract: '5LafQUrVco6o7KMz42eqVEJ9LW31StPyGjeeu5sKoMtA',
       enabled: false
     }
   ],
@@ -181,7 +181,7 @@ export const WATCHED_TOKENS = {
     {
       id: 'aix',
       symbol: 'AIX',
-      name: 'AIX',
+      name: 'AIImpact',
       color: '#00FFFF',
       platform: 'base',
       contract: '0x3f34d75da1027d20d052970c83bd4ddf8991557d',

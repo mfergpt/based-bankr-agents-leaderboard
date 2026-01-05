@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Chart from './components/Chart';
 import TokenList from './components/TokenList';
 import AddToken from './components/AddToken';
 import { getAllTokens } from './data/tokens';
 import { fetchAllTokensMarketCap, fetchTokenMarketCap, daysToApiParam, clearCache } from './api/coingecko';
 import { getSavedTokens, saveTokens, mergeTokenPreferences } from './utils/storage';
+import { subscribe as subscribeRateLimit, getRateLimitState } from './api/rateLimitState';
+import { mergeTokenVariants, getDisplayTokens } from './utils/tokenMerger';
 
 export default function App() {
   const [tokens, setTokens] = useState(() => {
@@ -22,6 +24,22 @@ export default function App() {
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, token: '' });
   const [error, setError] = useState(null);
   const [lastFetchedRange, setLastFetchedRange] = useState(null);
+  const [rateLimitState, setRateLimitState] = useState(getRateLimitState());
+
+  // Subscribe to rate limit state changes
+  useEffect(() => {
+    const unsubscribe = subscribeRateLimit(setRateLimitState);
+    return unsubscribe;
+  }, []);
+
+  // Merge token variants and get display tokens
+  const mergedTokens = useMemo(() => mergeTokenVariants(tokens), [tokens]);
+  const displayTokens = useMemo(() => getDisplayTokens(mergedTokens), [mergedTokens]);
+
+  // Get tokens for chart - only show best variant for each symbol
+  const chartTokens = useMemo(() => {
+    return displayTokens.filter(t => t.enabled);
+  }, [displayTokens]);
 
   // Fetch market cap data for enabled tokens only
   const fetchData = useCallback(async (days, onlyEnabled = true) => {
@@ -112,21 +130,33 @@ export default function App() {
   }, [selectedRange]);
 
   const handleToggleToken = (tokenId) => {
-    const token = tokens.find(t => t.id === tokenId);
-    const isEnabling = token && !token.enabled;
-    const needsData = token && (!token.data || token.data.length === 0);
+    // Find the token in displayTokens (might be merged)
+    const displayToken = displayTokens.find(t => t.id === tokenId);
+    if (!displayToken) return;
+
+    const isEnabling = !displayToken.enabled;
+
+    // Get all variant IDs to toggle together
+    const variantIds = displayToken.isMerged && displayToken.variants
+      ? displayToken.variants.map(v => v.id)
+      : [tokenId];
 
     setTokens(prev =>
       prev.map(t =>
-        t.id === tokenId
-          ? { ...t, enabled: !t.enabled }
+        variantIds.includes(t.id)
+          ? { ...t, enabled: isEnabling }
           : t
       )
     );
 
-    // Fetch data if enabling a token that doesn't have data yet
-    if (isEnabling && needsData) {
-      fetchSingleToken(token);
+    // Fetch data for all variants if enabling
+    if (isEnabling) {
+      variantIds.forEach(id => {
+        const token = tokens.find(t => t.id === id);
+        if (token && (!token.data || token.data.length === 0)) {
+          fetchSingleToken(token);
+        }
+      });
     }
   };
 
@@ -152,9 +182,9 @@ export default function App() {
     }
   };
 
-  // Count tokens with data
-  const tokensWithData = tokens.filter(t => t.data && t.data.length > 0).length;
-  const enabledTokens = tokens.filter(t => t.enabled);
+  // Count tokens with data (use display tokens for accurate count)
+  const tokensWithData = displayTokens.filter(t => t.data && t.data.length > 0).length;
+  const enabledCount = displayTokens.filter(t => t.enabled).length;
 
   return (
     <div className="app">
@@ -166,8 +196,21 @@ export default function App() {
       </header>
 
       <main className="main">
+        {/* Rate limit waiting indicator */}
+        {rateLimitState.isWaiting && (
+          <div className="rate-limit-bar">
+            <div className="rate-limit-icon">⏳</div>
+            <div className="rate-limit-message">
+              {rateLimitState.message}
+            </div>
+            <div className="rate-limit-countdown">
+              {rateLimitState.secondsRemaining}s
+            </div>
+          </div>
+        )}
+
         {/* Loading indicator */}
-        {isLoading && (
+        {isLoading && !rateLimitState.isWaiting && (
           <div className="loading-bar">
             <div className="loading-progress">
               Loading {loadingProgress.token}... ({loadingProgress.current}/{loadingProgress.total})
@@ -189,21 +232,21 @@ export default function App() {
 
         {/* Chart with integrated controls */}
         <Chart
-          tokens={tokens}
+          tokens={displayTokens}
           selectedRange={selectedRange}
           onRangeChange={handleRangeChange}
         />
 
         {/* Status */}
         <div className="data-status">
-          {tokensWithData}/{tokens.length} tokens loaded |
-          {enabledTokens.length} displayed
+          {tokensWithData}/{displayTokens.length} tokens loaded |
+          {enabledCount} displayed
           {isLoading && ' | Fetching data...'}
         </div>
 
         {/* Token list */}
         <TokenList
-          tokens={tokens}
+          tokens={displayTokens}
           onToggle={handleToggleToken}
           onRemove={handleRemoveToken}
         />

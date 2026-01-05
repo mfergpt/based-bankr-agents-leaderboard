@@ -85,6 +85,51 @@ body {
   font-size: 0.9375rem;
 }
 
+/* Rate limit waiting bar */
+.rate-limit-bar {
+  background-color: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.625rem;
+  border: 1px solid #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: #f59e0b; }
+  50% { border-color: #d97706; }
+}
+
+.rate-limit-icon {
+  font-size: 1.25rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.rate-limit-message {
+  flex: 1;
+  font-size: 0.9375rem;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.rate-limit-countdown {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #f59e0b;
+  font-variant-numeric: tabular-nums;
+  min-width: 3rem;
+  text-align: right;
+}
+
 /* Loading bar */
 .loading-bar {
   background-color: var(--bg-secondary);
@@ -376,6 +421,17 @@ body {
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
+}
+
+.token-platform-badge {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .token-actions {

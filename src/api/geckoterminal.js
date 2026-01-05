@@ -2,6 +2,8 @@
 // Free tier: 30 calls/min, no API key needed
 // Historical OHLCV up to 6 months
 
+import { startRateLimitWait } from './rateLimitState';
+
 const BASE_URL = 'https://api.geckoterminal.com/api/v2';
 
 // Map our platform names to GeckoTerminal network IDs
@@ -31,7 +33,10 @@ function setCache(key, data) {
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2100; // ~28 requests/min to stay safe
 
-async function rateLimitedFetch(url) {
+async function rateLimitedFetch(url, retryCount = 0) {
+  const MAX_RETRIES = 2;
+  const RATE_LIMIT_WAIT = 60; // seconds
+
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
 
@@ -51,9 +56,15 @@ async function rateLimitedFetch(url) {
     });
 
     if (response.status === 429) {
-      console.warn('GeckoTerminal rate limited, waiting 60s...');
-      await new Promise(resolve => setTimeout(resolve, 60000));
-      return fetch(url);
+      if (retryCount >= MAX_RETRIES) {
+        console.warn('GeckoTerminal: Max retries reached after rate limiting');
+        return null;
+      }
+
+      console.warn(`GeckoTerminal rate limited, waiting ${RATE_LIMIT_WAIT}s... (retry ${retryCount + 1}/${MAX_RETRIES})`);
+      startRateLimitWait('GeckoTerminal', RATE_LIMIT_WAIT);
+      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_WAIT * 1000));
+      return rateLimitedFetch(url, retryCount + 1);
     }
 
     return response;
