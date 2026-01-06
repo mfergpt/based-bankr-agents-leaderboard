@@ -67,22 +67,13 @@ export const WATCHED_TOKENS = {
       enabled: false
     },
     {
-      id: 'rizz-base',
-      symbol: 'RIZZ',
-      name: 'Rizz (Base)',
-      color: '#FF4500',
-      platform: 'base',
-      contract: '0x58d6e314755c2668f3d7358cc7a7a06c4314b238',
-      enabled: true
-    },
-    {
       id: 'rizz-sol',
       symbol: 'RIZZ',
-      name: 'Rizz (SOL)',
-      color: '#FF6347',
+      name: 'Rizz',
+      color: '#FF4500',
       platform: 'solana',
       contract: '5ad4puH6yDBoeCcrQfwV5s9bxvPnAeWDoYDj3uLyBS8k',
-      enabled: false
+      enabled: true
     },
     {
       id: 'soyjak',
@@ -171,8 +162,8 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'warwojak',
-      symbol: 'SOULJAK',
-      name: 'Souljak',
+      symbol: 'SOY',
+      name: 'Soy',
       color: '#B22222',
       platform: 'solana',
       contract: 'AbNzAEiA7zbNngcUFL92b7vEAUtJscSPwAiWV38Apump',
