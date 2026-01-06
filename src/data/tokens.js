@@ -77,8 +77,8 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'soyjak',
-      symbol: 'SOYJAK',
-      name: 'Soyjak',
+      symbol: 'SOY',
+      name: 'Soy',
       color: '#FFD700',
       platform: 'solana',
       contract: '4G3kNxwaA2UQHDpaQtJWQm1SReXcUD7LkT14v2oEs7rV',
@@ -162,8 +162,8 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'warwojak',
-      symbol: 'SOY',
-      name: 'Soy',
+      symbol: 'SOULJAK',
+      name: 'Souljak',
       color: '#B22222',
       platform: 'solana',
       contract: 'AbNzAEiA7zbNngcUFL92b7vEAUtJscSPwAiWV38Apump',
