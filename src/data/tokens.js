@@ -122,8 +122,8 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'net',
-      symbol: 'NET',
-      name: 'Net Protocol',
+      symbol: 'ALPHA',
+      name: 'Alpha',
       color: '#9400D3',
       platform: 'base',
       contract: '0x3D01Fe5A38ddBD307fDd635b4Cb0e29681226D6f',
@@ -171,8 +171,8 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'warwojak',
-      symbol: 'WARWOJAK',
-      name: 'War Wojak',
+      symbol: 'SOULJAK',
+      name: 'Souljak',
       color: '#B22222',
       platform: 'solana',
       contract: 'AbNzAEiA7zbNngcUFL92b7vEAUtJscSPwAiWV38Apump',
