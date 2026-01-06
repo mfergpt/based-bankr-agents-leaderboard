@@ -10,7 +10,7 @@ export const WATCHED_TOKENS = {
       color: '#3D9C40',
       platform: 'ethereum',
       contract: '0x6982508145454ce325ddbe47a25d4ec3d2311933',
-      enabled: true
+      enabled: false
     },
     {
       id: 'bobo-eth',
@@ -19,7 +19,7 @@ export const WATCHED_TOKENS = {
       color: '#8B4513',
       platform: 'ethereum',
       contract: '0xb90b2a35c65dbc466b04240097ca756ad2005295',
-      enabled: true
+      enabled: false
     },
     {
       id: 'bobo-base',
@@ -37,7 +37,7 @@ export const WATCHED_TOKENS = {
       color: '#FF69B4',
       platform: 'solana',
       contract: '8NNXWrWVctNw1UFeaBypffimTdcLCcD8XJzHvYsmgwpF',
-      enabled: true
+      enabled: false
     },
     {
       id: 'drb',
@@ -55,7 +55,7 @@ export const WATCHED_TOKENS = {
       color: '#00CED1',
       platform: 'ethereum',
       contract: '0x420698cfdeddea6bc78d59bc17798113ad278f9d',
-      enabled: true
+      enabled: false
     },
     {
       id: 'towelie-base',
@@ -73,7 +73,7 @@ export const WATCHED_TOKENS = {
       color: '#FF4500',
       platform: 'solana',
       contract: '5ad4puH6yDBoeCcrQfwV5s9bxvPnAeWDoYDj3uLyBS8k',
-      enabled: true
+      enabled: false
     },
     {
       id: 'soyjak',
@@ -82,7 +82,7 @@ export const WATCHED_TOKENS = {
       color: '#FFD700',
       platform: 'solana',
       contract: '4G3kNxwaA2UQHDpaQtJWQm1SReXcUD7LkT14v2oEs7rV',
-      enabled: true
+      enabled: false
     },
     {
       id: 'bankr',
@@ -100,7 +100,7 @@ export const WATCHED_TOKENS = {
       color: '#9932CC',
       platform: 'base',
       contract: '0x2b5050f01d64fbb3e4ac44dc07f0732bfb5ecadf',
-      enabled: true
+      enabled: false
     },
     {
       id: 'jbm',
@@ -118,7 +118,7 @@ export const WATCHED_TOKENS = {
       color: '#9400D3',
       platform: 'base',
       contract: '0x3D01Fe5A38ddBD307fDd635b4Cb0e29681226D6f',
-      enabled: true
+      enabled: false
     }
   ],
   secondary: [
