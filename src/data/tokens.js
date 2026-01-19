@@ -1,5 +1,6 @@
 // Token configuration with contract addresses
 // CoinGecko platform IDs: ethereum, base, solana
+// NOTE: Never use dark colors for token colors - they won't be visible on the black background
 
 export const WATCHED_TOKENS = {
   primary: [
@@ -122,9 +123,9 @@ export const WATCHED_TOKENS = {
     },
     {
       id: 'mfer-base',
-      symbol: 'MFER',
+      symbol: '$MFER',
       name: '$mfer',
-      color: '#000000',
+      color: '#FF6B6B',
       platform: 'base',
       contract: '0xE3086852A4B125803C815a158249ae468A3254Ca',
       enabled: false
