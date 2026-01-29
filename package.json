@@ -1,13 +1,14 @@
 {
-  "name": "casavarse",
+  "name": "based-bankr-agents-leaderboard",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
+  "description": "Track marketcap of tokenized AI agents deployed through Bankr on Base",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "lightweight-charts": "^5.1.0",

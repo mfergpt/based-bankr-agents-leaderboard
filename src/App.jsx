@@ -3,10 +3,14 @@ import Chart from './components/Chart';
 import TokenList from './components/TokenList';
 import AddToken from './components/AddToken';
 import { getAllTokens } from './data/tokens';
-import { fetchAllTokensMarketCap, fetchTokenMarketCap, daysToApiParam, clearCache } from './api/coingecko';
+import { fetchBankrAgents, getRegistryUrl, clearAgentsCache } from './api/bankrAgents';
+import { fetchAllTokensMarketCap, fetchGeckoTerminalMarketCap, clearCache, daysToApiParam } from './api/geckoterminal';
 import { getSavedTokens, saveTokens, mergeTokenPreferences } from './utils/storage';
 import { subscribe as subscribeRateLimit, getRateLimitState } from './api/rateLimitState';
 import { mergeTokenVariants, getDisplayTokens } from './utils/tokenMerger';
+
+// Auto-refresh interval for checking registry updates (5 minutes)
+const REGISTRY_REFRESH_INTERVAL = 5 * 60 * 1000;
 
 export default function App() {
   const [tokens, setTokens] = useState(() => {
@@ -25,6 +29,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [lastFetchedRange, setLastFetchedRange] = useState(null);
   const [rateLimitState, setRateLimitState] = useState(getRateLimitState());
+  const [registryStatus, setRegistryStatus] = useState({ lastUpdate: null, source: 'loading' });
 
   // Subscribe to rate limit state changes
   useEffect(() => {
@@ -32,11 +37,47 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Fetch agents from Bankr registry on mount and periodically
+  useEffect(() => {
+    async function loadAgentsFromRegistry() {
+      try {
+        const agents = await fetchBankrAgents();
+        const saved = getSavedTokens();
+        
+        // Merge with saved preferences (enabled state)
+        const mergedAgents = saved 
+          ? mergeTokenPreferences(agents, saved)
+          : agents;
+        
+        setTokens(mergedAgents);
+        setRegistryStatus({
+          lastUpdate: new Date().toLocaleTimeString(),
+          source: 'github',
+          count: agents.length
+        });
+      } catch (err) {
+        console.error('Failed to load agents from registry:', err);
+        setRegistryStatus({
+          lastUpdate: null,
+          source: 'fallback',
+          count: tokens.length
+        });
+      }
+    }
+
+    // Initial load
+    loadAgentsFromRegistry();
+
+    // Periodic refresh
+    const interval = setInterval(loadAgentsFromRegistry, REGISTRY_REFRESH_INTERVAL);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Merge token variants and get display tokens
   const mergedTokens = useMemo(() => mergeTokenVariants(tokens), [tokens]);
   const displayTokens = useMemo(() => getDisplayTokens(mergedTokens), [mergedTokens]);
 
-  // Get tokens for chart - only show best variant for each symbol
+  // Get tokens for chart - only show enabled tokens
   const chartTokens = useMemo(() => {
     return displayTokens.filter(t => t.enabled);
   }, [displayTokens]);
@@ -71,7 +112,7 @@ export default function App() {
         return prev.map(token => {
           const result = resultMap.get(token.id);
           if (result && result.data && result.data.length > 0) {
-            return { ...token, data: result.data, error: false };
+            return { ...token, data: result.data, error: false, currentMarketCap: result.currentMarketCap };
           }
           return token;
         });
@@ -97,7 +138,7 @@ export default function App() {
     if (enabledTokensNeedData || rangeIncreased || lastFetchedRange === null) {
       fetchData(selectedRange);
     }
-  }, [selectedRange]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedRange, tokens.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save token preferences when they change
   useEffect(() => {
@@ -111,13 +152,13 @@ export default function App() {
 
     try {
       const apiDays = daysToApiParam(selectedRange);
-      const result = await fetchTokenMarketCap(token, apiDays);
+      const result = await fetchGeckoTerminalMarketCap(token, apiDays);
 
       if (result && result.data && result.data.length > 0) {
         setTokens(prev =>
           prev.map(t =>
             t.id === token.id
-              ? { ...t, data: result.data, error: false }
+              ? { ...t, data: result.data, error: false, currentMarketCap: result.currentMarketCap }
               : t
           )
         );
@@ -170,7 +211,16 @@ export default function App() {
 
   const handleRefresh = () => {
     clearCache();
+    clearAgentsCache();
     setLastFetchedRange(null);
+    fetchBankrAgents(true).then(agents => {
+      setTokens(agents);
+      setRegistryStatus({
+        lastUpdate: new Date().toLocaleTimeString(),
+        source: 'github',
+        count: agents.length
+      });
+    });
     fetchData(selectedRange);
   };
 
@@ -182,7 +232,16 @@ export default function App() {
     }
   };
 
-  // Count tokens with data (use display tokens for accurate count)
+  // Sort tokens by market cap for leaderboard view
+  const sortedDisplayTokens = useMemo(() => {
+    return [...displayTokens].sort((a, b) => {
+      const mcapA = a.currentMarketCap || 0;
+      const mcapB = b.currentMarketCap || 0;
+      return mcapB - mcapA;
+    });
+  }, [displayTokens]);
+
+  // Count tokens with data
   const tokensWithData = displayTokens.filter(t => t.data && t.data.length > 0).length;
   const enabledCount = displayTokens.filter(t => t.enabled).length;
 
@@ -190,8 +249,25 @@ export default function App() {
     <div className="app">
       <header className="header">
         <div className="header-brand">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Jungle Bay Island" className="header-logo" />
-          <h1>Jungle Bay Island</h1>
+          <img src={`${import.meta.env.BASE_URL}bankr-logo.png`} alt="Bankr" className="header-logo" />
+          <div className="header-text">
+            <h1>Based Bankr Agents</h1>
+            <span className="header-subtitle">Leaderboard</span>
+          </div>
+        </div>
+        <div className="header-meta">
+          <a 
+            href={getRegistryUrl()} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="registry-link"
+          >
+            📋 Registry
+          </a>
+          <span className="registry-status">
+            {registryStatus.source === 'github' ? '🟢' : '🟡'} 
+            {registryStatus.count} agents
+          </span>
         </div>
       </header>
 
@@ -239,21 +315,27 @@ export default function App() {
 
         {/* Status */}
         <div className="data-status">
-          {tokensWithData}/{displayTokens.length} tokens loaded |
-          {enabledCount} displayed
-          {isLoading && ' | Fetching data...'}
+          {tokensWithData}/{displayTokens.length} agents loaded |
+          {enabledCount} displayed |
+          <button onClick={handleRefresh} className="refresh-btn">🔄 Refresh</button>
         </div>
 
-        {/* Token list */}
+        {/* Token list (leaderboard style - sorted by mcap) */}
         <TokenList
-          tokens={displayTokens}
+          tokens={sortedDisplayTokens}
           onToggle={handleToggleToken}
           onRemove={handleRemoveToken}
         />
       </main>
 
       <footer className="footer">
-        <p>Data from CoinGecko API | Updates every 5 minutes</p>
+        <p>
+          Data from GeckoTerminal | Registry from{' '}
+          <a href={getRegistryUrl()} target="_blank" rel="noopener noreferrer">
+            BankrBot/tokenized-agents
+          </a>
+          {' '}| All tokens on Base
+        </p>
       </footer>
 
       <AddToken
